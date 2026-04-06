@@ -11,25 +11,86 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Shield } from 'lucide-react'
+import { Shield, Loader2, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
+
+interface BrasilAPIResponse {
+  razao_social: string
+  nome_fantasia: string
+  email: string
+  ddd_telefone_1: string
+  logradouro: string
+  numero: string
+  complemento: string
+  bairro: string
+  municipio: string
+  uf: string
+  cep: string
+  descricao_situacao_cadastral: string
+}
 
 export default function SignupPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [cnpjLoading, setCnpjLoading] = useState(false)
+  const [cnpjOk, setCnpjOk] = useState(false)
+
   const {
     register,
     handleSubmit,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
   })
 
+  async function buscarCNPJ() {
+    const cnpj = getValues('cnpj')
+    const digits = cnpj.replace(/\D/g, '')
+    if (digits.length !== 14) return
+
+    setCnpjLoading(true)
+    setCnpjOk(false)
+
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`)
+      if (!res.ok) {
+        toast.error('CNPJ não encontrado na Receita Federal')
+        return
+      }
+      const data: BrasilAPIResponse = await res.json()
+
+      if (data.descricao_situacao_cadastral !== 'ATIVA') {
+        toast.warning(`Situação cadastral: ${data.descricao_situacao_cadastral}`)
+      }
+
+      setValue('razao_social', data.razao_social, { shouldValidate: true })
+
+      const endereco = [
+        data.logradouro,
+        data.numero,
+        data.complemento,
+        data.bairro,
+        `${data.municipio}/${data.uf}`,
+        data.cep,
+      ]
+        .filter(Boolean)
+        .join(', ')
+
+      setCnpjOk(true)
+      toast.success(`${data.razao_social} encontrada na Receita Federal`)
+    } catch {
+      toast.error('Erro ao consultar Receita Federal')
+    } finally {
+      setCnpjLoading(false)
+    }
+  }
+
   async function onSubmit(data: SignupFormData) {
     setLoading(true)
     const supabase = createClient()
 
-    // 1. Create the corretora first
     const { data: corretora, error: corrError } = await supabase
       .from('corretoras')
       .insert({
@@ -47,7 +108,6 @@ export default function SignupPage() {
       return
     }
 
-    // 2. Sign up the user with corretora_id in metadata
     const { error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
@@ -83,25 +143,57 @@ export default function SignupPage() {
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="razao_social">Razão Social</Label>
-            <Input id="razao_social" placeholder="Sua Corretora Ltda" {...register('razao_social')} />
-            {errors.razao_social && <p className="text-sm text-destructive">{errors.razao_social.message}</p>}
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="cnpj">CNPJ</Label>
-            <Input id="cnpj" placeholder="00.000.000/0000-00" {...register('cnpj')} />
+            <div className="flex gap-2">
+              <Input
+                id="cnpj"
+                placeholder="00.000.000/0000-00"
+                className="flex-1"
+                {...register('cnpj')}
+                onBlur={buscarCNPJ}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={buscarCNPJ}
+                disabled={cnpjLoading}
+                title="Consultar Receita Federal"
+              >
+                {cnpjLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : cnpjOk ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                ) : (
+                  <span className="text-xs font-medium">RF</span>
+                )}
+              </Button>
+            </div>
             {errors.cnpj && <p className="text-sm text-destructive">{errors.cnpj.message}</p>}
           </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="razao_social">Razão Social</Label>
+            <Input
+              id="razao_social"
+              placeholder="Preenchido automaticamente pelo CNPJ"
+              {...register('razao_social')}
+            />
+            {errors.razao_social && <p className="text-sm text-destructive">{errors.razao_social.message}</p>}
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="nome">Seu Nome</Label>
             <Input id="nome" placeholder="Nome completo" {...register('nome')} />
             {errors.nome && <p className="text-sm text-destructive">{errors.nome.message}</p>}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" placeholder="seu@email.com" {...register('email')} />
             {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
           </div>
+
           <div className="space-y-2">
             <Label htmlFor="password">Senha</Label>
             <Input id="password" type="password" placeholder="Mínimo 6 caracteres" {...register('password')} />
