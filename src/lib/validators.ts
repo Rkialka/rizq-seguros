@@ -1,5 +1,29 @@
 import { z } from 'zod'
 
+function validarCNPJ(cnpj: string): boolean {
+  const digits = cnpj.replace(/\D/g, '')
+  if (digits.length !== 14) return false
+  if (/^(\d)\1+$/.test(digits)) return false // rejeita sequências iguais (00000000000000)
+
+  const calc = (len: number) => {
+    let sum = 0
+    let pos = len - 7
+    for (let i = len; i >= 1; i--) {
+      sum += parseInt(digits[len - i]) * pos--
+      if (pos < 2) pos = 9
+    }
+    const result = sum % 11 < 2 ? 0 : 11 - (sum % 11)
+    return result === parseInt(digits[len])
+  }
+
+  return calc(12) && calc(13)
+}
+
+const cnpjSchema = z
+  .string()
+  .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido (formato: XX.XXX.XXX/XXXX-XX)')
+  .refine(validarCNPJ, 'CNPJ inválido')
+
 // Auth
 export const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -11,9 +35,7 @@ export const signupSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Mínimo 6 caracteres'),
   razao_social: z.string().min(2, 'Razão social é obrigatória'),
-  cnpj: z
-    .string()
-    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido (formato: XX.XXX.XXX/XXXX-XX)'),
+  cnpj: cnpjSchema,
 })
 
 // Proposta
@@ -58,9 +80,7 @@ export const novaApoliceSchema = z.object({
 // Tomador (for inline creation)
 export const novoTomadorSchema = z.object({
   razao_social: z.string().min(2, 'Razão social é obrigatória'),
-  cnpj: z
-    .string()
-    .regex(/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/, 'CNPJ inválido'),
+  cnpj: cnpjSchema,
   email: z.string().email('Email inválido').optional().or(z.literal('')),
   telefone: z.string().optional(),
 })
