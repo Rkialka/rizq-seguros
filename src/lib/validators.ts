@@ -31,11 +31,14 @@ export const loginSchema = z.object({
 })
 
 export const signupSchema = z.object({
-  nome: z.string().min(2, 'Nome é obrigatório'),
+  cnpj: cnpjSchema,
+  razao_social: z.string().min(2, 'Razão social é obrigatória'),
+  nome_fantasia: z.string().optional(),
+  telefone: z.string().optional(),
+  email_corretora: z.string().email('Email inválido').optional().or(z.literal('')),
+  nome: z.string().min(2, 'Seu nome é obrigatório'),
   email: z.string().email('Email inválido'),
   password: z.string().min(6, 'Mínimo 6 caracteres'),
-  razao_social: z.string().min(2, 'Razão social é obrigatória'),
-  cnpj: cnpjSchema,
 })
 
 // Proposta
