@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { createClient } from '@/lib/supabase/client'
 import { signupSchema, type SignupFormData } from '@/lib/validators'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -94,37 +93,17 @@ export default function SignupPage() {
 
   async function onSubmit(data: SignupFormData) {
     setSubmitLoading(true)
-    const supabase = createClient()
 
-    const { data: corretora, error: corrError } = await supabase
-      .from('corretoras')
-      .insert({
-        razao_social: data.razao_social,
-        nome_fantasia: data.nome_fantasia || null,
-        cnpj: data.cnpj,
-        email: data.email_corretora || null,
-        telefone: data.telefone || null,
-      })
-      .select('id')
-      .single()
-
-    if (corrError) {
-      toast.error(corrError.message.includes('unique') ? 'CNPJ já cadastrado' : 'Erro ao criar corretora')
-      setSubmitLoading(false)
-      return
-    }
-
-    const { error: authError } = await supabase.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: { nome: data.nome, corretora_id: corretora.id, role: 'admin' },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    const res = await fetch('/api/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     })
 
-    if (authError) {
-      toast.error('Erro ao criar conta: ' + authError.message)
+    const json = await res.json()
+
+    if (!res.ok) {
+      toast.error(json.error ?? 'Erro ao criar conta')
       setSubmitLoading(false)
       return
     }
