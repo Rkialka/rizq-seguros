@@ -47,7 +47,7 @@ function SelectChip({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          height: 30, padding: '0 28px 0 10px', fontSize: 12, fontWeight: 500,
+          height: 38, padding: '0 28px 0 10px', fontSize: 13, fontWeight: 500,
           background: value ? '#e3ede9' : 'var(--rz-white)',
           color: 'var(--rz-ink)',
           border: `1px solid ${value ? 'var(--rz-deep)' : 'var(--rz-line)'}`,
@@ -128,8 +128,8 @@ export function PropostasList() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, height: 34, padding: '0 12px', flex: 1,
-          background: 'var(--rz-white)', border: '1px solid var(--rz-line)', borderRadius: 6, maxWidth: 360,
+          display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', flex: 1,
+          background: 'var(--rz-white)', border: '1px solid var(--rz-line)', borderRadius: 6,
         }}>
           <Search size={13} style={{ color: 'var(--rz-text-2)', flexShrink: 0 }} />
           <input
@@ -179,8 +179,84 @@ export function PropostasList() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="rz-card" style={{ overflow: 'hidden', padding: 0 }}>
+      {/* Mobile card list (hidden on md+) */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {isLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="rz-card" style={{ padding: 16 }}>
+                <div className="rz-skeleton" style={{ height: 12, width: 100, borderRadius: 4, marginBottom: 8 }} />
+                <div className="rz-skeleton" style={{ height: 16, width: 200, borderRadius: 4, marginBottom: 6 }} />
+                <div className="rz-skeleton" style={{ height: 11, width: 140, borderRadius: 4 }} />
+              </div>
+            ))
+          : totalCount === 0
+          ? <div style={{ textAlign: 'center', color: 'var(--rz-text-2)', fontSize: 13, padding: '32px 0' }}>Nenhuma proposta encontrada</div>
+          : paged.map((proposta) => {
+              const sla = getSLADaysRemaining(proposta.sla_inicio, proposta.sla_dias)
+              const stageTone = STAGE_TONES[proposta.status] ?? { bg: 'var(--rz-fog)', color: 'var(--rz-text-2)' }
+              const stageConfig = PROPOSTA_STAGES.find((s) => s.id === proposta.status)
+              const prioColor = PRIO_COLORS[proposta.prioridade] ?? 'var(--rz-text-3)'
+              const slaColor = sla < 0 ? 'var(--rz-danger)' : sla <= 2 ? 'var(--rz-amber)' : 'var(--rz-text-2)'
+              return (
+                <div
+                  key={proposta.id}
+                  className="rz-card"
+                  onClick={() => router.push(`/propostas/${proposta.id}`)}
+                  style={{ padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--rz-text-3)', fontFamily: 'var(--font-mono, monospace)', marginBottom: 2 }}>
+                        {proposta.numero_proposta}
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--rz-ink)', lineHeight: 1.2 }}>
+                        {(proposta.tomador as any)?.razao_social}
+                      </div>
+                      {proposta.objeto && (
+                        <div style={{ fontSize: 12, color: 'var(--rz-text-2)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                          {proposta.objeto}
+                        </div>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, fontWeight: 600, background: stageTone.bg, color: stageTone.color, flexShrink: 0 }}>
+                      {stageConfig?.label}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rz-ink)', fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtBRLk(proposta.importancia_segurada ?? 0)}
+                    </span>
+                    {(proposta.modalidade as any)?.nome && (
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: 'var(--rz-lime-soft)', color: 'var(--rz-deep)', fontWeight: 500 }}>
+                        {(proposta.modalidade as any)?.nome}
+                      </span>
+                    )}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, marginLeft: 'auto' }}>
+                      <span style={{ width: 6, height: 6, borderRadius: 999, background: prioColor }} />
+                      <span style={{ color: slaColor, fontWeight: 600 }}>{sla < 0 ? 'Atrasada' : `SLA ${sla}d`}</span>
+                    </span>
+                  </div>
+                </div>
+              )
+            })
+        }
+        {/* Mobile pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', paddingTop: 4 }}>
+            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
+              style={{ flex: 1, height: 44, fontSize: 13, fontWeight: 500, borderRadius: 8, border: '1px solid var(--rz-line)', background: 'var(--rz-white)', cursor: page === 0 ? 'not-allowed' : 'pointer', color: page === 0 ? 'var(--rz-text-3)' : 'var(--rz-ink)' }}>
+              ← Anterior
+            </button>
+            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}
+              style={{ flex: 1, height: 44, fontSize: 13, fontWeight: 500, borderRadius: 8, border: '1px solid var(--rz-line)', background: page >= totalPages - 1 ? 'var(--rz-fog)' : 'var(--rz-deep)', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', color: page >= totalPages - 1 ? 'var(--rz-text-3)' : 'var(--rz-paper)' }}>
+              Próximo →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table (hidden on mobile) */}
+      <div className="rz-card hidden md:block" style={{ overflow: 'hidden', padding: 0 }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
@@ -324,7 +400,7 @@ export function PropostasList() {
                 disabled={page === 0}
                 onClick={() => setPage(p => p - 1)}
                 style={{
-                  height: 28, padding: '0 10px', fontSize: 12, fontWeight: 500,
+                  height: 36, padding: '0 14px', fontSize: 12, fontWeight: 500,
                   background: 'transparent', color: page === 0 ? 'var(--rz-text-3)' : 'var(--rz-ink)',
                   border: '1px solid var(--rz-line)', borderRadius: 6,
                   cursor: page === 0 ? 'not-allowed' : 'pointer',
@@ -333,7 +409,7 @@ export function PropostasList() {
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage(p => p + 1)}
                 style={{
-                  height: 28, padding: '0 10px', fontSize: 12, fontWeight: 500,
+                  height: 36, padding: '0 14px', fontSize: 12, fontWeight: 500,
                   background: page >= totalPages - 1 ? 'var(--rz-fog)' : 'var(--rz-white)',
                   color: page >= totalPages - 1 ? 'var(--rz-text-3)' : 'var(--rz-ink)',
                   border: '1px solid var(--rz-line)', borderRadius: 6,

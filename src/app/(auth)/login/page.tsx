@@ -78,13 +78,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', minHeight: '100vh', background: 'var(--rz-paper)' }}>
-      {/* Left panel — editorial */}
-      <div style={{
+    <div className="lg:grid lg:grid-cols-[1.1fr_1fr]" style={{ minHeight: '100vh', background: 'var(--rz-paper)' }}>
+      {/* Left panel — editorial (hidden on mobile) */}
+      <div className="hidden lg:flex" style={{
         background: 'var(--rz-deep)',
         color: 'var(--rz-paper)',
         padding: 48,
-        display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
         position: 'relative',
@@ -151,7 +150,11 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel — form */}
-      <div style={{ padding: 48, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+      <div style={{ padding: 'clamp(24px, 6vw, 48px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', minHeight: '100vh' }}>
+        {/* Logo — only on mobile where left panel is hidden */}
+        <div className="lg:hidden" style={{ marginBottom: 32, display: 'flex', justifyContent: 'center' }}>
+          <Image src="/rizq-lockup-onLight.png" alt="RIZQ" width={100} height={36} style={{ height: 36, width: 'auto', objectFit: 'contain' }} priority />
+        </div>
         <div style={{ maxWidth: 420, width: '100%', margin: '0 auto' }}>
           <div className="rz-eyebrow" style={{ marginBottom: 8 }}>Acesso à plataforma</div>
           <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: 32, margin: 0, color: 'var(--rz-ink)', lineHeight: 1.1 }}>

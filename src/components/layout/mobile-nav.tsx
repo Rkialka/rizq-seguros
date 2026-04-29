@@ -21,7 +21,7 @@ export function MobileNav() {
       display: 'flex', alignItems: 'stretch',
       background: 'var(--rz-white)',
       borderTop: '1px solid var(--rz-line)',
-      height: 'calc(56px + env(safe-area-inset-bottom))',
+      height: 'calc(64px + env(safe-area-inset-bottom))',
       paddingBottom: 'env(safe-area-inset-bottom)',
     }}
     className="lg:hidden"
@@ -67,7 +67,7 @@ export function MobileNav() {
             }}
           >
             <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
-            <span style={{ fontSize: 9, fontWeight: isActive ? 600 : 400, letterSpacing: '0.02em' }}>
+            <span style={{ fontSize: 11, fontWeight: isActive ? 600 : 400, letterSpacing: '0.01em' }}>
               {item.label}
             </span>
           </Link>

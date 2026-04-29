@@ -84,9 +84,9 @@ function SelectChip({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          height: 30,
+          height: 38,
           padding: '0 28px 0 10px',
-          fontSize: 12,
+          fontSize: 13,
           fontWeight: 500,
           background: value ? '#e3ede9' : 'var(--rz-white)',
           color: 'var(--rz-ink)',
@@ -160,8 +160,8 @@ export function ApolicesTable() {
       {/* Filters bar */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, height: 34, padding: '0 12px', flex: 1,
-          background: 'var(--rz-white)', border: '1px solid var(--rz-line)', borderRadius: 6, maxWidth: 360,
+          display: 'flex', alignItems: 'center', gap: 8, height: 40, padding: '0 12px', flex: 1,
+          background: 'var(--rz-white)', border: '1px solid var(--rz-line)', borderRadius: 6,
         }}>
           <Search size={13} style={{ color: 'var(--rz-text-2)', flexShrink: 0 }} />
           <input
@@ -211,8 +211,73 @@ export function ApolicesTable() {
         </button>
       </div>
 
-      {/* Table */}
-      <div className="rz-card" style={{ overflow: 'hidden', padding: 0 }}>
+      {/* Mobile card list (hidden on md+) */}
+      <div className="flex flex-col gap-2 md:hidden">
+        {isLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="rz-card" style={{ padding: 16 }}>
+                <div className="rz-skeleton" style={{ height: 12, width: 100, borderRadius: 4, marginBottom: 8 }} />
+                <div className="rz-skeleton" style={{ height: 16, width: 200, borderRadius: 4, marginBottom: 6 }} />
+                <div className="rz-skeleton" style={{ height: 11, width: 140, borderRadius: 4 }} />
+              </div>
+            ))
+          : totalCount === 0
+          ? <div style={{ textAlign: 'center', color: 'var(--rz-text-2)', fontSize: 13, padding: '32px 0' }}>Nenhuma apólice encontrada</div>
+          : paged.map((apolice) => {
+              const days = Math.ceil((new Date(apolice.vigencia_fim).getTime() - Date.now()) / 86400000)
+              const daysTone = apolice.status === 'vencida' ? 'var(--rz-danger)' : days < 30 ? '#6e4d10' : 'var(--rz-moss)'
+              return (
+                <div
+                  key={apolice.id}
+                  className="rz-card"
+                  onClick={() => router.push(`/apolices/${apolice.id}`)}
+                  style={{ padding: 16, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 10 }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 10, color: 'var(--rz-text-3)', fontFamily: 'var(--font-mono, monospace)', marginBottom: 2 }}>
+                        {apolice.numero_apolice}
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--rz-ink)', lineHeight: 1.2 }}>
+                        {(apolice.tomador as any)?.razao_social}
+                      </div>
+                    </div>
+                    <StatusChip status={apolice.status} days={days} />
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--rz-ink)', fontVariantNumeric: 'tabular-nums' }}>
+                      {fmtBRLk(apolice.importancia_segurada ?? 0)}
+                    </span>
+                    {(apolice.modalidade as any)?.nome && (
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 999, background: 'var(--rz-lime-soft)', color: 'var(--rz-deep)', fontWeight: 500 }}>
+                        {(apolice.modalidade as any)?.nome}
+                      </span>
+                    )}
+                    <span style={{ fontSize: 11, color: daysTone, fontWeight: 600, marginLeft: 'auto' }}>
+                      {apolice.status === 'vencida' ? `Venceu há ${Math.abs(days)}d` : `Vence em ${days}d`}
+                    </span>
+                  </div>
+                </div>
+              )
+            })
+        }
+        {/* Mobile pagination */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center', paddingTop: 4 }}>
+            <button disabled={page === 0} onClick={() => setPage(p => p - 1)}
+              style={{ flex: 1, height: 44, fontSize: 13, fontWeight: 500, borderRadius: 8, border: '1px solid var(--rz-line)', background: 'var(--rz-white)', cursor: page === 0 ? 'not-allowed' : 'pointer', color: page === 0 ? 'var(--rz-text-3)' : 'var(--rz-ink)' }}>
+              ← Anterior
+            </button>
+            <button disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}
+              style={{ flex: 1, height: 44, fontSize: 13, fontWeight: 500, borderRadius: 8, border: '1px solid var(--rz-line)', background: page >= totalPages - 1 ? 'var(--rz-fog)' : 'var(--rz-deep)', cursor: page >= totalPages - 1 ? 'not-allowed' : 'pointer', color: page >= totalPages - 1 ? 'var(--rz-text-3)' : 'var(--rz-paper)' }}>
+              Próximo →
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop table (hidden on mobile) */}
+      <div className="rz-card hidden md:block" style={{ overflow: 'hidden', padding: 0 }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
@@ -349,7 +414,7 @@ export function ApolicesTable() {
                 disabled={page === 0}
                 onClick={() => setPage(p => p - 1)}
                 style={{
-                  height: 28, padding: '0 10px', fontSize: 12, fontWeight: 500,
+                  height: 36, padding: '0 14px', fontSize: 12, fontWeight: 500,
                   background: 'transparent', color: page === 0 ? 'var(--rz-text-3)' : 'var(--rz-ink)',
                   border: '1px solid var(--rz-line)', borderRadius: 6,
                   cursor: page === 0 ? 'not-allowed' : 'pointer',
@@ -358,7 +423,7 @@ export function ApolicesTable() {
                 disabled={page >= totalPages - 1}
                 onClick={() => setPage(p => p + 1)}
                 style={{
-                  height: 28, padding: '0 10px', fontSize: 12, fontWeight: 500,
+                  height: 36, padding: '0 14px', fontSize: 12, fontWeight: 500,
                   background: page >= totalPages - 1 ? 'var(--rz-fog)' : 'var(--rz-white)',
                   color: page >= totalPages - 1 ? 'var(--rz-text-3)' : 'var(--rz-ink)',
                   border: '1px solid var(--rz-line)', borderRadius: 6,

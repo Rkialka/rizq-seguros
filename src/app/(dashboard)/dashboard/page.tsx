@@ -61,7 +61,7 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div style={{ padding: '24px 28px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div style={{ padding: 'clamp(16px, 4vw, 28px)', display: 'flex', flexDirection: 'column', gap: 20 }}>
       {/* KPI hero strip */}
       <KPICards />
 
@@ -130,7 +130,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Pipeline chart + Activity */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: 16 }}>
+      <div className="grid grid-cols-1 lg:grid-cols-[1.6fr_1fr]" style={{ gap: 16 }}>
         <PropostasChart />
         <ActivityFeed />
       </div>

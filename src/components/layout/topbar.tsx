@@ -105,8 +105,8 @@ export function Topbar({ onMobileMenuToggle, userName: userNameProp }: TopbarPro
       borderBottom: '1px solid var(--rz-line)',
       display: 'flex',
       alignItems: 'center',
-      padding: '0 24px',
-      gap: 16,
+      padding: '0 16px',
+      gap: 10,
       flexShrink: 0,
     }}>
       {/* Mobile menu toggle */}
@@ -114,14 +114,14 @@ export function Topbar({ onMobileMenuToggle, userName: userNameProp }: TopbarPro
         className="lg:hidden"
         onClick={onMobileMenuToggle}
         style={{
-          width: 34, height: 34, borderRadius: 6,
+          width: 44, height: 44, borderRadius: 8,
           border: '1px solid var(--rz-line)',
           background: 'var(--rz-white)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', color: 'var(--rz-ink)', flexShrink: 0,
         }}
       >
-        <Menu size={16} />
+        <Menu size={18} />
       </button>
 
       {/* Page title */}
@@ -188,14 +188,14 @@ export function Topbar({ onMobileMenuToggle, userName: userNameProp }: TopbarPro
         className="flex md:hidden"
         onClick={openCmdSearch}
         style={{
-          width: 34, height: 34, borderRadius: 6,
+          width: 44, height: 44, borderRadius: 8,
           border: '1px solid var(--rz-line)',
           background: 'var(--rz-white)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: 'pointer', color: 'var(--rz-ink)', flexShrink: 0,
         }}
       >
-        <Search size={15} />
+        <Search size={18} />
       </button>
 
       {/* Notification bell */}
@@ -203,7 +203,7 @@ export function Topbar({ onMobileMenuToggle, userName: userNameProp }: TopbarPro
         <button
           onClick={() => setBellOpen(p => !p)}
           style={{
-            width: 34, height: 34, borderRadius: 6,
+            width: 44, height: 44, borderRadius: 8,
             border: '1px solid var(--rz-line)',
             background: bellOpen ? 'var(--rz-fog)' : 'var(--rz-white)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -232,8 +232,8 @@ export function Topbar({ onMobileMenuToggle, userName: userNameProp }: TopbarPro
               onClick={() => setBellOpen(false)}
             />
             <div style={{
-              position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 50,
-              width: 340, maxHeight: 400, overflowY: 'auto',
+              position: 'fixed', top: 68, right: 16, zIndex: 50,
+              width: 'min(340px, calc(100vw - 32px))', maxHeight: '60vh', overflowY: 'auto',
               background: 'var(--rz-white)', border: '1px solid var(--rz-line)',
               borderRadius: 8, boxShadow: '0 8px 24px rgba(3,26,19,0.14)',
             }}>

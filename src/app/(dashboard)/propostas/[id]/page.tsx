@@ -210,15 +210,15 @@ export default function PropostaDetailPage({ params }: { params: Promise<{ id: s
   }
 
   return (
-    <div style={{ padding: '28px 32px', maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ padding: 'clamp(16px, 4vw, 32px)', maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 28 }}>
         <button
           onClick={() => router.back()}
           style={{
-            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 6, border: '1px solid var(--rz-line)', background: 'var(--rz-white)',
-            color: 'var(--rz-ink)', cursor: 'pointer', flexShrink: 0, marginTop: 4,
+            width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 8, border: '1px solid var(--rz-line)', background: 'var(--rz-white)',
+            color: 'var(--rz-ink)', cursor: 'pointer', flexShrink: 0,
           }}
         >
           <ArrowLeft size={15} />
@@ -365,7 +365,7 @@ export default function PropostaDetailPage({ params }: { params: Promise<{ id: s
       )}
 
       {/* Cards grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: 14, marginBottom: 14 }}>
         <InfoCard title="Tomador" icon={Building2}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rz-ink)', marginBottom: 4 }}>
             {(proposta as any).tomador?.razao_social}

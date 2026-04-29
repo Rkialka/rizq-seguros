@@ -75,9 +75,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '8px 10px', borderRadius: 6,
-                    fontSize: 13, fontWeight: 500, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '12px 14px', borderRadius: 8,
+                    fontSize: 14, fontWeight: 500, textDecoration: 'none',
                     color: isActive ? 'var(--rz-deep)' : 'rgba(255,255,255,0.78)',
                     background: isActive ? 'var(--rz-lime)' : 'transparent',
                   }}
@@ -116,7 +116,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main content area */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar onMobileMenuToggle={() => setMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main className="flex-1 overflow-y-auto pb-24 lg:pb-0">
           {children}
         </main>
         <MobileNav />
