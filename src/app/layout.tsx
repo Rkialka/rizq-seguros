@@ -1,25 +1,32 @@
 import type { Metadata, Viewport } from 'next'
-import { Plus_Jakarta_Sans } from 'next/font/google'
+import { Instrument_Serif, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { QueryProvider } from '@/components/providers/query-provider'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: '--font-sans',
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-serif',
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
+  weight: ['400'],
+  style: ['normal', 'italic'],
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
 })
 
 export const metadata: Metadata = {
-  title: 'RIZQ Seguros - Plataforma para Corretores',
+  title: 'RIZQ — Plataforma para Corretores de Ramos Elementares',
   description:
-    'Backoffice técnico, plataforma operacional e IA para corretores que querem vender linhas corporativas mais rentáveis.',
+    'Backoffice técnico, operação automatizada e IA para corretores que querem vender ramos elementares mais rentáveis.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'RIZQ Seguros',
+    title: 'RIZQ',
   },
 }
 
@@ -36,12 +43,12 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="pt-BR" className={`${jakarta.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">
+    <html lang="pt-BR" className={`${instrumentSerif.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+      <body className="min-h-full flex flex-col">
         <QueryProvider>
           <TooltipProvider>
             {children}
-            <Toaster position="top-right" richColors />
+            <Toaster position="bottom-right" richColors />
           </TooltipProvider>
         </QueryProvider>
       </body>

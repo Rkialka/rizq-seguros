@@ -2,33 +2,52 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { cn } from '@/lib/utils'
-import { LayoutDashboard, FileText, Shield, Plus, MoreHorizontal } from 'lucide-react'
+import { LayoutDashboard, FileText, Shield, Plus, Settings } from 'lucide-react'
 
 const mobileItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/propostas', label: 'Propostas', icon: FileText },
-  { href: '/propostas/nova', label: 'Nova', icon: Plus, isAction: true },
-  { href: '/apolices', label: 'Apólices', icon: Shield },
+  { href: '/dashboard',     label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/propostas',     label: 'Propostas', icon: FileText },
+  { href: '/propostas/nova', label: 'Nova',     icon: Plus, isAction: true },
+  { href: '/apolices',      label: 'Apólices',  icon: Shield },
+  { href: '/configuracoes', label: 'Config',    icon: Settings },
 ]
 
 export function MobileNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex lg:hidden items-center justify-around border-t bg-background pb-[env(safe-area-inset-bottom)] h-16">
+    <nav style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+      display: 'flex', alignItems: 'stretch',
+      background: 'var(--rz-white)',
+      borderTop: '1px solid var(--rz-line)',
+      height: 'calc(56px + env(safe-area-inset-bottom))',
+      paddingBottom: 'env(safe-area-inset-bottom)',
+    }}
+    className="lg:hidden"
+    >
       {mobileItems.map((item) => {
-        const isActive = pathname.startsWith(item.href) && !item.isAction
+        const isActive = item.href !== '/propostas/nova' &&
+          (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))
 
         if (item.isAction) {
           return (
             <Link
               key={item.href}
               href={item.href}
-              className="flex flex-col items-center justify-center -mt-4"
+              style={{
+                flex: 1, display: 'flex', flexDirection: 'column',
+                alignItems: 'center', justifyContent: 'center', gap: 0,
+              }}
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
-                <item.icon className="h-6 w-6" />
+              <div style={{
+                width: 44, height: 44, borderRadius: 999,
+                background: 'var(--rz-deep)', color: 'var(--rz-lime)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                marginTop: -18,
+                boxShadow: '0 2px 8px rgba(0,75,54,0.35)',
+              }}>
+                <Plus size={20} strokeWidth={2.5} />
               </div>
             </Link>
           )
@@ -38,13 +57,19 @@ export function MobileNav() {
           <Link
             key={item.href}
             href={item.href}
-            className={cn(
-              'flex flex-col items-center justify-center gap-0.5 px-3 py-1',
-              isActive ? 'text-primary' : 'text-muted-foreground'
-            )}
+            style={{
+              flex: 1, display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center', gap: 3,
+              color: isActive ? 'var(--rz-deep)' : 'var(--rz-text-3)',
+              textDecoration: 'none',
+              borderTop: isActive ? '2px solid var(--rz-lime)' : '2px solid transparent',
+              transition: 'color 120ms ease',
+            }}
           >
-            <item.icon className="h-5 w-5" />
-            <span className="text-[10px] font-medium">{item.label}</span>
+            <item.icon size={20} strokeWidth={isActive ? 2 : 1.5} />
+            <span style={{ fontSize: 9, fontWeight: isActive ? 600 : 400, letterSpacing: '0.02em' }}>
+              {item.label}
+            </span>
           </Link>
         )
       })}

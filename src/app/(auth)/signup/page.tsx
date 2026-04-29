@@ -94,25 +94,35 @@ export default function SignupPage() {
   async function onSubmit(data: SignupFormData) {
     setSubmitLoading(true)
 
-    const res = await fetch('/api/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    })
+    try {
+      const res = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
 
-    const json = await res.json()
+      const contentType = res.headers.get('content-type') ?? ''
+      const json = contentType.includes('application/json')
+        ? ((await res.json()) as { error?: string })
+        : null
 
-    if (!res.ok) {
-      toast.error(json.error ?? 'Erro ao criar conta')
+      if (!res.ok) {
+        toast.error(json?.error ?? 'Erro ao criar conta')
+        setSubmitLoading(false)
+        return
+      }
+
+      toast.success('Conta criada! Verifique seu email para confirmar.')
+      router.push('/login')
+    } catch {
+      toast.error('Erro ao criar conta')
       setSubmitLoading(false)
-      return
     }
-
-    toast.success('Conta criada! Verifique seu email para confirmar.')
-    router.push('/login')
   }
 
   return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--rz-fog)', padding: 24 }}>
+    <div style={{ width: '100%', maxWidth: 460 }}>
     <Card>
       <CardHeader className="text-center">
         <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -270,5 +280,7 @@ export default function SignupPage() {
         </CardFooter>
       </form>
     </Card>
+    </div>
+    </div>
   )
 }

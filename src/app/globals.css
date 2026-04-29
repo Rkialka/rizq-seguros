@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -8,8 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+  --font-heading: var(--font-serif);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,82 +41,67 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
+  --radius-sm: calc(var(--radius) * 0.67);
+  --radius-md: calc(var(--radius) * 0.83);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xl: calc(var(--radius) * 2);
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* ── RIZQ v2 design tokens ── */
+  --rz-ink:         #031a13;
+  --rz-deep:        #004b36;
+  --rz-pine:        #0a6b4d;
+  --rz-moss:        #1f8a64;
+  --rz-mist:        #dfe9e3;
+  --rz-fog:         #f4f6f3;
+  --rz-paper:       #fbfcf9;
+  --rz-white:       #ffffff;
+  --rz-lime:        #c3d600;
+  --rz-lime-soft:   #e6ee99;
+  --rz-ember:       #c84e1a;
+  --rz-amber:       #d99a2b;
+  --rz-amber-soft:  #fbeed0;
+  --rz-danger:      #c1282d;
+  --rz-danger-soft: #f8dbdc;
+  --rz-line:        #dde3df;
+  --rz-line-2:      #eaefea;
+  --rz-text-2:      #5b6b62;
+  --rz-text-3:      #8a9690;
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  /* ── shadcn mapped to RIZQ palette ── */
+  --background:           var(--rz-paper);
+  --foreground:           var(--rz-ink);
+  --card:                 var(--rz-white);
+  --card-foreground:      var(--rz-ink);
+  --popover:              var(--rz-white);
+  --popover-foreground:   var(--rz-ink);
+  --primary:              var(--rz-lime);
+  --primary-foreground:   var(--rz-deep);
+  --secondary:            var(--rz-fog);
+  --secondary-foreground: var(--rz-ink);
+  --muted:                var(--rz-fog);
+  --muted-foreground:     var(--rz-text-2);
+  --accent:               var(--rz-mist);
+  --accent-foreground:    var(--rz-ink);
+  --destructive:          var(--rz-danger);
+  --border:               var(--rz-line);
+  --input:                var(--rz-line);
+  --ring:                 var(--rz-lime);
+  --chart-1:              var(--rz-lime);
+  --chart-2:              var(--rz-deep);
+  --chart-3:              var(--rz-moss);
+  --chart-4:              var(--rz-amber);
+  --chart-5:              var(--rz-ember);
+  --radius:               6px;
+  --sidebar:              var(--rz-deep);
+  --sidebar-foreground:   var(--rz-paper);
+  --sidebar-primary:      var(--rz-lime);
+  --sidebar-primary-foreground: var(--rz-deep);
+  --sidebar-accent:       rgba(255,255,255,0.06);
+  --sidebar-accent-foreground: var(--rz-paper);
+  --sidebar-border:       #002218;
+  --sidebar-ring:         var(--rz-lime);
 }
 
 @layer base {
@@ -123,8 +110,58 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Geist', system-ui, -apple-system, sans-serif;
   }
-  html {
-    @apply font-sans;
-  }
+}
+
+/* ── Typography utilities ── */
+.font-serif  { font-family: 'Instrument Serif', Georgia, serif; }
+.font-mono   { font-family: 'JetBrains Mono', ui-monospace, monospace; }
+.font-sans   { font-family: 'Geist', system-ui, sans-serif; }
+.tabular-nums { font-variant-numeric: tabular-nums; }
+
+/* ── RIZQ component utilities ── */
+.rz-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--rz-text-2);
+  font-weight: 500;
+}
+
+.rz-card {
+  background: var(--rz-white);
+  border: 1px solid var(--rz-line);
+  border-radius: 6px;
+}
+
+.rz-divider {
+  height: 1px;
+  background: var(--rz-line-2);
+}
+
+/* ── Sidebar scrollbar ── */
+.rz-sidebar-scroll {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.rz-sidebar-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Focus ring override using lime ── */
+*:focus-visible {
+  outline: 2px solid var(--rz-lime);
+  outline-offset: 2px;
+}
+
+/* ── Skeleton shimmer ── */
+@keyframes rz-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.rz-skeleton {
+  background: linear-gradient(90deg, var(--rz-line-2) 25%, var(--rz-mist) 50%, var(--rz-line-2) 75%);
+  background-size: 800px 100%;
+  animation: rz-shimmer 1.4s ease infinite;
 }

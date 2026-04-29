@@ -2,20 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
-import type { DashboardKPIs, Atividade, Apolice, Proposta } from '@/types/domain'
+import type { DashboardKPIs, Atividade, Apolice } from '@/types/domain'
+
 
 export function useDashboardKPIs() {
   return useQuery<DashboardKPIs>({
     queryKey: ['dashboard-kpis'],
     queryFn: async () => {
       const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      const corretora_id = user.app_metadata?.corretora_id
-      const { data, error } = await supabase.rpc('get_dashboard_kpis', {
-        p_corretora_id: corretora_id,
-      })
+      const { data, error } = await supabase.rpc('get_dashboard_kpis')
       if (error) throw error
       return data as DashboardKPIs
     },

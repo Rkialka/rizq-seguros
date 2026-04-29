@@ -56,62 +56,71 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER trg_propostas_status_log
   AFTER UPDATE ON propostas
   FOR EACH ROW EXECUTE FUNCTION log_proposta_status_change();
 
 -- Dashboard KPI function (single query instead of 7)
-CREATE OR REPLACE FUNCTION get_dashboard_kpis(p_corretora_id UUID)
+CREATE OR REPLACE FUNCTION get_dashboard_kpis()
 RETURNS JSONB AS $$
 DECLARE
+  v_corretora_id UUID := get_my_corretora_id();
   result JSONB;
 BEGIN
+  IF auth.uid() IS NULL OR v_corretora_id IS NULL THEN
+    RAISE EXCEPTION 'Not authenticated'
+      USING ERRCODE = '42501';
+  END IF;
+
   SELECT jsonb_build_object(
     'premio_emitido_mes', COALESCE((
       SELECT SUM(premio) FROM apolices
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status = 'vigente'
         AND data_emissao >= date_trunc('month', CURRENT_DATE)
     ), 0),
     'propostas_criadas_mes', (
       SELECT COUNT(*) FROM propostas
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND created_at >= date_trunc('month', CURRENT_DATE)
     ),
     'cotacoes_pendentes', (
       SELECT COUNT(*) FROM propostas
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status IN ('cotacao_pendente', 'em_analise')
     ),
     'emissoes_mes', (
       SELECT COUNT(*) FROM propostas
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status = 'emitida'
         AND updated_at >= date_trunc('month', CURRENT_DATE)
     ),
     'pipeline_value', COALESCE((
       SELECT SUM(premio) FROM propostas
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status NOT IN ('emitida', 'rejeitada', 'erro_emissao')
     ), 0),
     'apolices_vencendo_30d', (
       SELECT COUNT(*) FROM apolices
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status = 'vigente'
         AND vigencia_fim BETWEEN CURRENT_DATE AND CURRENT_DATE + 30
     ),
     'sla_em_risco', (
       SELECT COUNT(*) FROM propostas
-      WHERE corretora_id = p_corretora_id
+      WHERE corretora_id = v_corretora_id
         AND status NOT IN ('emitida', 'rejeitada', 'erro_emissao')
         AND (EXTRACT(EPOCH FROM (now() - sla_inicio)) / 86400) > sla_dias
     )
   ) INTO result;
   RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+REVOKE ALL ON FUNCTION public.get_dashboard_kpis() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.get_dashboard_kpis() TO authenticated, service_role;
 
 -- Handle new user signup: create usuario row and set corretora_id in app_metadata
 CREATE OR REPLACE FUNCTION handle_new_user()
@@ -137,7 +146,7 @@ BEGIN
 
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

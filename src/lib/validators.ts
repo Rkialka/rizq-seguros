@@ -30,6 +30,18 @@ export const loginSchema = z.object({
   password: z.string().min(6, 'Mínimo 6 caracteres'),
 })
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email inválido'),
+})
+
+export const updatePasswordSchema = z.object({
+  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  confirmPassword: z.string().min(6, 'Mínimo 6 caracteres'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "As senhas não coincidem",
+  path: ["confirmPassword"],
+})
+
 export const signupSchema = z.object({
   cnpj: cnpjSchema,
   razao_social: z.string().min(2, 'Razão social é obrigatória'),
@@ -90,6 +102,8 @@ export const novoTomadorSchema = z.object({
 
 export type LoginFormData = z.infer<typeof loginSchema>
 export type SignupFormData = z.infer<typeof signupSchema>
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+export type UpdatePasswordFormData = z.infer<typeof updatePasswordSchema>
 export type NovaPropostaFormData = z.infer<typeof novaPropostaSchema>
 export type NovaApoliceFormData = z.infer<typeof novaApoliceSchema>
 export type NovoTomadorFormData = z.infer<typeof novoTomadorSchema>

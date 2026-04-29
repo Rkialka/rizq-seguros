@@ -39,3 +39,26 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Netlify folder
+.netlify
+
+# Local dev / debug scripts
+check_*.js
+confirm_*.js
+fix_*.js
+reset_*.js
+test_*.js
+parse_*.py
+deno.lock
+
+# PDFs e arquivos pessoais
+*.pdf
+BRAIN/
+FIX_*.sql
+PROMPT_*.md
+SUPABASE_SETUP_PROMPT.md
+"ficha de cadastro/"
+
+# Claude session
+.claude/

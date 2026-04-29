@@ -2,7 +2,7 @@
 CREATE OR REPLACE FUNCTION public.get_my_corretora_id()
 RETURNS UUID AS $$
   SELECT (auth.jwt() -> 'app_metadata' ->> 'corretora_id')::UUID;
-$$ LANGUAGE sql STABLE SECURITY DEFINER;
+$$ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public;
 
 -- Enable RLS on all tenant tables
 ALTER TABLE corretoras ENABLE ROW LEVEL SECURITY;
@@ -21,7 +21,6 @@ CREATE POLICY "corretoras_select" ON corretoras FOR SELECT USING (id = get_my_co
 
 -- Usuarios: users can see others in same corretora
 CREATE POLICY "usuarios_select" ON usuarios FOR SELECT USING (corretora_id = get_my_corretora_id());
-CREATE POLICY "usuarios_update" ON usuarios FOR UPDATE USING (id = auth.uid());
 
 -- Tomadores
 CREATE POLICY "tomadores_select" ON tomadores FOR SELECT USING (corretora_id = get_my_corretora_id());

@@ -4,189 +4,278 @@ import { use } from 'react'
 import { useRouter } from 'next/navigation'
 import { useApolice } from '@/hooks/use-apolices'
 import { APOLICE_STATUS, formatBRL, formatDateBR } from '@/lib/constants'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Building2, Calendar, DollarSign, Shield, FileText, Link2 } from 'lucide-react'
+import { ArrowLeft, Calendar, DollarSign, Shield, Building2, FileText, Link2, RefreshCw, FilePlus, XCircle } from 'lucide-react'
 import Link from 'next/link'
+
+const STATUS_TONES: Record<string, { bg: string; color: string }> = {
+  vigente:   { bg: '#dff0e8', color: 'var(--rz-moss)' },
+  vencida:   { bg: 'var(--rz-danger-soft)', color: 'var(--rz-danger)' },
+  cancelada: { bg: 'var(--rz-fog)', color: 'var(--rz-text-2)' },
+  encerrada: { bg: 'var(--rz-fog)', color: 'var(--rz-text-3)' },
+}
+
+function InfoCard({ title, icon: Icon, children }: { title: string; icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div className="rz-card" style={{ padding: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <Icon size={14} style={{ color: 'var(--rz-text-2)' }} />
+        <span className="rz-eyebrow">{title}</span>
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function DataRow({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, padding: '6px 0', borderBottom: '1px solid var(--rz-line-2)' }}>
+      <span style={{ fontSize: 12, color: 'var(--rz-text-2)' }}>{label}</span>
+      <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--rz-ink)', textAlign: 'right' }}>{value}</span>
+    </div>
+  )
+}
 
 export default function ApoliceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
-  const { data: apolice, isLoading } = useApolice(id)
+  const { data: apolice, isLoading, error, refetch } = useApolice(id)
 
   if (isLoading) {
     return (
-      <div className="p-4 lg:p-6 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-64 w-full" />
+      <div style={{ padding: '28px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {[280, 480, 200].map(w => (
+          <div key={w} className="rz-skeleton" style={{ height: 44, width: w, borderRadius: 6 }} />
+        ))}
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 32 }}>⚠️</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--rz-ink)' }}>Erro ao carregar apólice</div>
+        <div style={{ fontSize: 13, color: 'var(--rz-text-2)' }}>Verifique sua conexão e tente novamente.</div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button onClick={() => refetch()} style={{ height: 34, padding: '0 16px', borderRadius: 6, border: 'none', background: 'var(--rz-deep)', color: 'var(--rz-paper)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>Tentar novamente</button>
+          <button onClick={() => router.back()} style={{ height: 34, padding: '0 16px', borderRadius: 6, border: '1px solid var(--rz-line)', background: 'var(--rz-white)', fontSize: 13, color: 'var(--rz-ink)', cursor: 'pointer', fontFamily: 'inherit' }}>Voltar</button>
+        </div>
       </div>
     )
   }
 
   if (!apolice) {
     return (
-      <div className="p-4 lg:p-6">
-        <p className="text-muted-foreground">Apólice não encontrada</p>
+      <div style={{ padding: '48px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+        <div style={{ fontSize: 32 }}>🔍</div>
+        <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--rz-ink)' }}>Apólice não encontrada</div>
+        <div style={{ fontSize: 13, color: 'var(--rz-text-2)' }}>O registro pode ter sido removido.</div>
+        <button onClick={() => router.back()} style={{ height: 34, padding: '0 16px', borderRadius: 6, border: '1px solid var(--rz-line)', background: 'var(--rz-white)', fontSize: 13, color: 'var(--rz-ink)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 }}>Voltar</button>
       </div>
     )
   }
 
-  const statusConfig = APOLICE_STATUS.find((s) => s.id === apolice.status)
-  const daysToExpiry = Math.ceil(
-    (new Date(apolice.vigencia_fim).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-  )
+  const statusConfig = APOLICE_STATUS.find(s => s.id === apolice.status)
+  const statusTone = STATUS_TONES[apolice.status] ?? { bg: 'var(--rz-fog)', color: 'var(--rz-text-2)' }
+  const daysToExpiry = Math.ceil((new Date(apolice.vigencia_fim).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+  const expiryUrgent = apolice.status === 'vigente' && daysToExpiry <= 30
+  const expiryWarn = apolice.status === 'vigente' && daysToExpiry > 30 && daysToExpiry <= 60
 
   return (
-    <div className="p-4 lg:p-6 space-y-6">
+    <div style={{ padding: '28px 32px', maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.back()}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-bold">{apolice.numero_apolice}</h1>
-            <Badge
-              variant="outline"
-              style={{ borderColor: statusConfig?.color, color: statusConfig?.color }}
-            >
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 28 }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 6, border: '1px solid var(--rz-line)', background: 'var(--rz-white)',
+            color: 'var(--rz-ink)', cursor: 'pointer', flexShrink: 0, marginTop: 4,
+          }}
+        >
+          <ArrowLeft size={15} />
+        </button>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+            <span style={{
+              fontFamily: 'var(--font-mono, monospace)', fontSize: 11,
+              color: 'var(--rz-text-3)', letterSpacing: '0.06em',
+            }}>
+              {apolice.numero_apolice}
+            </span>
+            <span style={{
+              fontSize: 11, padding: '3px 10px', borderRadius: 999, fontWeight: 500,
+              background: statusTone.bg, color: statusTone.color,
+            }}>
               {statusConfig?.label}
-            </Badge>
-            {apolice.status === 'vigente' && daysToExpiry <= 60 && (
-              <Badge variant={daysToExpiry <= 30 ? 'destructive' : 'secondary'}>
-                Vence em {daysToExpiry} dias
-              </Badge>
+            </span>
+            {(expiryUrgent || expiryWarn) && (
+              <span style={{
+                fontSize: 11, padding: '3px 10px', borderRadius: 999, fontWeight: 500,
+                background: expiryUrgent ? 'var(--rz-danger-soft)' : 'var(--rz-amber-soft)',
+                color: expiryUrgent ? 'var(--rz-danger)' : 'var(--rz-amber)',
+              }}>
+                Vence em {daysToExpiry}d
+              </span>
             )}
           </div>
-          <p className="text-muted-foreground mt-1">{apolice.objeto}</p>
+          <h1 style={{
+            fontFamily: 'var(--font-serif)', fontSize: 26, margin: 0,
+            color: 'var(--rz-ink)', fontWeight: 400, lineHeight: 1.15,
+          }}>
+            {(apolice as any).tomador?.razao_social ?? '—'}
+          </h1>
+          {apolice.objeto && (
+            <p style={{ fontSize: 13, color: 'var(--rz-text-2)', margin: '6px 0 0' }}>
+              {apolice.objeto}
+            </p>
+          )}
         </div>
       </div>
 
-      {/* Linked Proposta */}
+      {/* Linked proposta */}
       {apolice.proposta && (
-        <Card className="border-dashed">
-          <CardContent className="p-3 flex items-center gap-2">
-            <Link2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Originada da proposta:</span>
-            <Link
-              href={`/propostas/${apolice.proposta.id}`}
-              className="text-sm text-primary underline"
-            >
-              {(apolice.proposta as any)?.numero_proposta}
-            </Link>
-          </CardContent>
-        </Card>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16,
+          padding: '10px 16px', borderRadius: 6,
+          border: '1px dashed var(--rz-line)', background: 'var(--rz-fog)',
+        }}>
+          <Link2 size={13} style={{ color: 'var(--rz-text-3)' }} />
+          <span style={{ fontSize: 12, color: 'var(--rz-text-2)' }}>Originada da proposta:</span>
+          <Link
+            href={`/propostas/${apolice.proposta.id}`}
+            style={{ fontSize: 12, color: 'var(--rz-pine)', textDecoration: 'none', fontWeight: 500 }}
+          >
+            {(apolice.proposta as any)?.numero_proposta}
+          </Link>
+        </div>
       )}
 
-      {/* Details Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Building2 className="h-4 w-4" /> Tomador
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="font-medium">{(apolice.tomador as any)?.razao_social}</p>
-            <p className="text-sm text-muted-foreground">{(apolice.tomador as any)?.cnpj}</p>
-          </CardContent>
-        </Card>
+      {/* Cards grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <InfoCard title="Tomador" icon={Building2}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rz-ink)', marginBottom: 4 }}>
+            {(apolice as any).tomador?.razao_social}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--rz-text-2)', fontFamily: 'var(--font-mono, monospace)', letterSpacing: '0.04em' }}>
+            {(apolice as any).tomador?.cnpj}
+          </div>
+        </InfoCard>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Shield className="h-4 w-4" /> Seguro
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1">
-            <p className="font-medium">{(apolice.seguradora as any)?.nome}</p>
-            <Badge variant="outline">{(apolice.modalidade as any)?.nome}</Badge>
-          </CardContent>
-        </Card>
+        <InfoCard title="Seguro" icon={Shield}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--rz-ink)', marginBottom: 6 }}>
+            {(apolice as any).modalidade?.nome ?? '—'}
+          </div>
+          {(apolice as any).seguradora && (
+            <span style={{
+              fontSize: 11, padding: '2px 8px', borderRadius: 999,
+              background: 'var(--rz-fog)', border: '1px solid var(--rz-line)',
+              color: 'var(--rz-text-2)',
+            }}>
+              {(apolice as any).seguradora.nome}
+            </span>
+          )}
+        </InfoCard>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4" /> Valores
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">IS:</span>
-                <p className="font-medium">{formatBRL(apolice.importancia_segurada)}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Prêmio:</span>
-                <p className="font-medium">{formatBRL(apolice.premio)}</p>
-              </div>
-              {apolice.taxa && (
-                <div>
-                  <span className="text-muted-foreground">Taxa:</span>
-                  <p className="font-medium">{(apolice.taxa * 100).toFixed(2)}%</p>
-                </div>
-              )}
-              {apolice.comissao_percentual && (
-                <div>
-                  <span className="text-muted-foreground">Comissão:</span>
-                  <p className="font-medium">{apolice.comissao_percentual}%</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <InfoCard title="Valores" icon={DollarSign}>
+          <DataRow label="Importância Segurada" value={formatBRL(apolice.importancia_segurada)} />
+          <DataRow label="Prêmio" value={formatBRL(apolice.premio)} />
+          {apolice.taxa != null && <DataRow label="Taxa" value={`${(apolice.taxa * 100).toFixed(2)}%`} />}
+          {apolice.comissao_percentual != null && <DataRow label="Comissão" value={`${apolice.comissao_percentual}%`} />}
+          {apolice.comissao_valor != null && <DataRow label="Valor comissão" value={formatBRL(apolice.comissao_valor)} />}
+        </InfoCard>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" /> Vigência
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-1">
-            <p>Início: {formatDateBR(apolice.vigencia_inicio)}</p>
-            <p>Fim: {formatDateBR(apolice.vigencia_fim)}</p>
-            {apolice.data_emissao && <p>Emissão: {formatDateBR(apolice.data_emissao)}</p>}
-          </CardContent>
-        </Card>
+        <InfoCard title="Vigência" icon={Calendar}>
+          <DataRow label="Início" value={formatDateBR(apolice.vigencia_inicio)} />
+          <DataRow label="Fim" value={formatDateBR(apolice.vigencia_fim)} />
+          {apolice.data_emissao && <DataRow label="Emissão" value={formatDateBR(apolice.data_emissao)} />}
+          {apolice.status === 'vigente' && (
+            <DataRow
+              label="Dias restantes"
+              value={daysToExpiry > 0 ? `${daysToExpiry} dias` : 'Vencida'}
+            />
+          )}
+        </InfoCard>
       </div>
 
-      {/* Additional Info */}
-      {(apolice.favorecido || apolice.numero_licitacao || apolice.numero_contrato || apolice.observacoes) && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <FileText className="h-4 w-4" /> Informações Adicionais
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            {apolice.favorecido && <p>Favorecido: {apolice.favorecido}</p>}
-            {apolice.numero_licitacao && <p>Licitação: {apolice.numero_licitacao}</p>}
-            {apolice.numero_contrato && <p>Contrato: {apolice.numero_contrato}</p>}
-            {apolice.orgao_publico && <p>Órgão: {apolice.orgao_publico}</p>}
-            {apolice.observacoes && (
-              <>
-                <Separator />
-                <p className="text-muted-foreground">{apolice.observacoes}</p>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Phase 2 placeholders */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {['Endossos', 'Sinistros', 'Boletos'].map((section) => (
-          <Card key={section}>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              <p className="text-sm">{section}</p>
-              <p className="text-xs mt-1">Em breve</p>
-            </CardContent>
-          </Card>
+      {/* Quick actions */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 14, flexWrap: 'wrap' }}>
+        {/* Renovar apólice — active when vigente */}
+        {apolice.status === 'vigente' ? (
+          <button
+            onClick={() => router.push(`/propostas/nova?renew=${apolice.id}`)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              height: 36, padding: '0 16px', borderRadius: 6,
+              fontSize: 12, fontWeight: 500, fontFamily: 'inherit',
+              background: 'var(--rz-white)', color: 'var(--rz-ink)',
+              border: '1px solid var(--rz-line)',
+              cursor: 'pointer', transition: 'opacity 120ms ease',
+            }}
+          >
+            <RefreshCw size={13} />
+            Renovar apólice
+          </button>
+        ) : (
+          <button
+            disabled
+            title="Em breve"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              height: 36, padding: '0 16px', borderRadius: 6,
+              fontSize: 12, fontWeight: 500, fontFamily: 'inherit',
+              background: 'var(--rz-fog)', color: 'var(--rz-text-3)',
+              border: '1px solid var(--rz-line-2)',
+              cursor: 'not-allowed',
+            }}
+          >
+            <RefreshCw size={13} />
+            Renovar apólice
+            <span style={{ fontSize: 9, color: 'var(--rz-text-3)', marginLeft: 2 }}>em breve</span>
+          </button>
+        )}
+        {[
+          { icon: FilePlus,   label: 'Emitir endosso',    active: apolice.status === 'vigente' },
+          { icon: XCircle,    label: 'Cancelar apólice',  active: false, danger: true },
+        ].map(({ icon: Icon, label, active, danger }) => (
+          <button
+            key={label}
+            disabled={!active}
+            title={!active ? 'Em breve' : undefined}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 7,
+              height: 36, padding: '0 16px', borderRadius: 6,
+              fontSize: 12, fontWeight: 500, fontFamily: 'inherit',
+              background: active ? ((danger as boolean | undefined) ? 'var(--rz-danger-soft)' : 'var(--rz-white)') : 'var(--rz-fog)',
+              color: active ? ((danger as boolean | undefined) ? 'var(--rz-danger)' : 'var(--rz-ink)') : 'var(--rz-text-3)',
+              border: `1px solid ${active ? ((danger as boolean | undefined) ? 'var(--rz-danger)' : 'var(--rz-line)') : 'var(--rz-line-2)'}`,
+              cursor: active ? 'pointer' : 'not-allowed',
+              transition: 'opacity 120ms ease',
+            }}
+          >
+            <Icon size={13} />
+            {label}
+            {!active && <span style={{ fontSize: 9, color: 'var(--rz-text-3)', marginLeft: 2 }}>em breve</span>}
+          </button>
         ))}
       </div>
+
+      {/* Additional info */}
+      {(apolice.favorecido || apolice.numero_licitacao || apolice.numero_contrato || apolice.orgao_publico || apolice.numero_endosso || apolice.observacoes) && (
+        <InfoCard title="Informações adicionais" icon={FileText}>
+          <DataRow label="Favorecido" value={apolice.favorecido} />
+          <DataRow label="N° Endosso" value={apolice.numero_endosso} />
+          <DataRow label="Licitação" value={apolice.numero_licitacao} />
+          <DataRow label="Contrato" value={apolice.numero_contrato} />
+          <DataRow label="Órgão público" value={apolice.orgao_publico} />
+          {apolice.observacoes && (
+            <p style={{ fontSize: 12, color: 'var(--rz-text-2)', marginTop: 10, lineHeight: 1.6 }}>
+              {apolice.observacoes}
+            </p>
+          )}
+        </InfoCard>
+      )}
     </div>
   )
 }

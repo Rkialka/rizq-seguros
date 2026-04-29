@@ -2,23 +2,22 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useApolices } from '@/hooks/use-apolices'
+import { usePropostas } from '@/hooks/use-propostas'
 import { useSeguradoras } from '@/hooks/use-propostas'
-import { APOLICE_STATUS, formatBRL, formatDateBR } from '@/lib/constants'
+import { PROPOSTA_STAGES, PRIORIDADES, STAGE_TONES, PRIO_COLORS, formatBRL, formatDateBR, getSLADaysRemaining } from '@/lib/constants'
 import { Search, ChevronRight, ChevronDown, Download } from 'lucide-react'
 
 function exportCSV(rows: any[], filename: string) {
-  const headers = ['Apólice', 'Tomador', 'Modalidade', 'Seguradora', 'Vigência Início', 'Vigência Fim', 'IS', 'Prêmio', 'Status']
-  const csvRows = rows.map(a => [
-    a.numero_apolice,
-    (a.tomador as any)?.razao_social ?? '',
-    (a.modalidade as any)?.nome ?? '',
-    (a.seguradora as any)?.nome ?? '',
-    a.vigencia_inicio,
-    a.vigencia_fim,
-    a.importancia_segurada ?? '',
-    a.premio ?? '',
-    a.status,
+  const headers = ['Proposta', 'Tomador', 'Modalidade', 'Seguradora', 'IS', 'Status', 'Prioridade', 'SLA Início']
+  const csvRows = rows.map(p => [
+    p.numero_proposta,
+    (p.tomador as any)?.razao_social ?? '',
+    (p.modalidade as any)?.nome ?? '',
+    (p.seguradora as any)?.nome ?? '',
+    p.importancia_segurada ?? '',
+    p.status,
+    p.prioridade ?? '',
+    p.sla_inicio ?? '',
   ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
   const csv = [headers.join(','), ...csvRows].join('\n')
   const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' })
@@ -32,42 +31,6 @@ function fmtBRLk(v: number) {
   if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1).replace('.', ',')}M`
   if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(0)}k`
   return formatBRL(v)
-}
-
-function StatusChip({ status, days }: { status: string; days: number }) {
-  const tone =
-    status === 'vencida' ? 'danger'
-    : status === 'cancelada' || status === 'encerrada' ? 'neutral'
-    : days < 30 ? 'amber'
-    : 'moss'
-
-  const styles: Record<string, { bg: string; color: string }> = {
-    moss:    { bg: 'var(--rz-lime-soft)',   color: 'var(--rz-deep)' },
-    amber:   { bg: 'var(--rz-amber-soft)',  color: '#6e4d10' },
-    danger:  { bg: 'var(--rz-danger-soft)', color: 'var(--rz-danger)' },
-    neutral: { bg: 'var(--rz-mist)',        color: 'var(--rz-text-2)' },
-  }
-  const s = styles[tone]
-  const label =
-    status === 'vigente' ? 'Vigente'
-    : status === 'vencida' ? 'Vencida'
-    : status === 'cancelada' ? 'Cancelada'
-    : 'Encerrada'
-
-  return (
-    <span style={{
-      fontSize: 10,
-      padding: '2px 8px',
-      borderRadius: 999,
-      fontWeight: 600,
-      background: s.bg,
-      color: s.color,
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-    }}>
-      <span style={{ width: 5, height: 5, borderRadius: 999, background: s.color, display: 'inline-block' }} />
-      {label}
-    </span>
-  )
 }
 
 function SelectChip({
@@ -84,17 +47,11 @@ function SelectChip({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         style={{
-          height: 30,
-          padding: '0 28px 0 10px',
-          fontSize: 12,
-          fontWeight: 500,
+          height: 30, padding: '0 28px 0 10px', fontSize: 12, fontWeight: 500,
           background: value ? '#e3ede9' : 'var(--rz-white)',
           color: 'var(--rz-ink)',
           border: `1px solid ${value ? 'var(--rz-deep)' : 'var(--rz-line)'}`,
-          borderRadius: 6,
-          appearance: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
+          borderRadius: 6, appearance: 'none', cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
         <option value="">{label}: Todos</option>
@@ -102,38 +59,49 @@ function SelectChip({
           <option key={o.id} value={o.id}>{o.label}</option>
         ))}
       </select>
-      <ChevronDown size={12} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', color: 'var(--rz-text-2)', pointerEvents: 'none' }} />
+      <ChevronDown size={12} style={{
+        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+        color: 'var(--rz-text-2)', pointerEvents: 'none',
+      }} />
     </div>
   )
 }
 
 const PAGE_SIZE = 20
 
-export function ApolicesTable() {
+export function PropostasList() {
   const router = useRouter()
   const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<string>('')
-  const [seguradoraFilter, setSeguradoraFilter] = useState<string>('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [seguradoraFilter, setSeguradoraFilter] = useState('')
   const [page, setPage] = useState(0)
 
-  const { data: apolices, isLoading } = useApolices({
-    search: search || undefined,
-    status: statusFilter || undefined,
-    seguradora_id: seguradoraFilter || undefined,
-  })
+  const { data: allPropostas, isLoading } = usePropostas()
   const { data: seguradoras } = useSeguradoras()
 
-  const totalCount = apolices?.length ?? 0
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
-  const paged = apolices?.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE) ?? []
+  const propostas = (allPropostas ?? []).filter((p) => {
+    const matchSearch = !search || (
+      p.numero_proposta.toLowerCase().includes(search.toLowerCase()) ||
+      (p.tomador as any)?.razao_social?.toLowerCase().includes(search.toLowerCase()) ||
+      p.objeto?.toLowerCase().includes(search.toLowerCase())
+    )
+    const matchStatus = !statusFilter || p.status === statusFilter
+    const matchSeg = !seguradoraFilter || p.seguradora_id === seguradoraFilter
+    return matchSearch && matchStatus && matchSeg
+  })
 
-  const vigentes  = apolices?.filter((a) => a.status === 'vigente')?.length ?? 0
-  const vencendo  = apolices?.filter((a) => {
-    const d = Math.ceil((new Date(a.vigencia_fim).getTime() - Date.now()) / 86400000)
-    return a.status === 'vigente' && d <= 30
-  })?.length ?? 0
-  const vencidas  = apolices?.filter((a) => a.status === 'vencida')?.length ?? 0
-  const totalIS   = apolices?.reduce((s, a) => s + (a.importancia_segurada ?? 0), 0) ?? 0
+  const totalCount = propostas.length
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE))
+  const paged = propostas.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  // KPI strip
+  const ativas   = propostas.filter((p) => !['emitida','rejeitada','erro_emissao'].includes(p.status)).length
+  const pipeline = propostas.reduce((s, p) => s + (p.importancia_segurada ?? 0), 0)
+  const slaRisco = propostas.filter((p) => {
+    const d = getSLADaysRemaining(p.sla_inicio, p.sla_dias)
+    return d <= 0 && !['emitida','rejeitada','erro_emissao'].includes(p.status)
+  }).length
+  const emissao  = propostas.filter((p) => p.status === 'em_emissao' || p.status === 'aprovada').length
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -144,10 +112,10 @@ export function ApolicesTable() {
         border: '1px solid var(--rz-line)', borderRadius: 6, overflow: 'hidden',
       }}>
         {[
-          { l: 'Vigentes', v: String(vigentes), sub: `${fmtBRLk(totalIS)} em IS` },
-          { l: 'Vencendo 30d', v: String(vencendo), sub: 'em risco de renovação', tone: 'var(--rz-amber)' as string },
-          { l: 'Vencidas', v: String(vencidas), sub: 'aguardando renovação', tone: 'var(--rz-danger)' as string },
-          { l: 'Total', v: String(apolices?.length ?? 0), sub: 'apólices na carteira' },
+          { l: 'Em pipeline', v: String(ativas), sub: `${fmtBRLk(pipeline)} em IS` },
+          { l: 'SLA em risco', v: String(slaRisco), sub: 'prazo vencido', tone: 'var(--rz-danger)' as string | undefined },
+          { l: 'Prontas p/ emissão', v: String(emissao), sub: 'aprovadas/em emissão', tone: 'var(--rz-moss)' as string | undefined },
+          { l: 'Total filtrado', v: String(propostas.length), sub: 'propostas encontradas' },
         ].map((k, i) => (
           <div key={i} style={{ background: 'var(--rz-white)', padding: 16 }}>
             <div className="rz-eyebrow" style={{ marginBottom: 8 }}>{k.l}</div>
@@ -157,7 +125,7 @@ export function ApolicesTable() {
         ))}
       </div>
 
-      {/* Filters bar */}
+      {/* Filters */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, height: 34, padding: '0 12px', flex: 1,
@@ -165,7 +133,7 @@ export function ApolicesTable() {
         }}>
           <Search size={13} style={{ color: 'var(--rz-text-2)', flexShrink: 0 }} />
           <input
-            placeholder="Buscar por nº apólice, tomador, CNPJ…"
+            placeholder="Buscar por nº proposta, tomador, objeto…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{
@@ -178,7 +146,7 @@ export function ApolicesTable() {
           label="Status"
           value={statusFilter}
           onChange={setStatusFilter}
-          options={APOLICE_STATUS.map((s) => ({ id: s.id, label: s.label }))}
+          options={PROPOSTA_STAGES.map((s) => ({ id: s.id, label: s.label }))}
         />
         <SelectChip
           label="Seguradora"
@@ -195,14 +163,14 @@ export function ApolicesTable() {
           </button>
         )}
         <button
-          onClick={() => exportCSV(apolices ?? [], 'apolices.csv')}
-          disabled={!apolices || apolices.length === 0}
+          onClick={() => exportCSV(propostas, 'propostas.csv')}
+          disabled={propostas.length === 0}
           style={{
             display: 'flex', alignItems: 'center', gap: 5,
             height: 30, padding: '0 12px', borderRadius: 6, border: '1px solid var(--rz-line)',
             background: 'var(--rz-white)', color: 'var(--rz-ink)',
             fontSize: 12, fontWeight: 500, fontFamily: 'inherit', cursor: 'pointer',
-            opacity: (!apolices || apolices.length === 0) ? 0.5 : 1,
+            opacity: propostas.length === 0 ? 0.5 : 1,
             marginLeft: 'auto',
           }}
         >
@@ -217,10 +185,10 @@ export function ApolicesTable() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
             <thead>
               <tr style={{ background: 'var(--rz-fog)', borderBottom: '1px solid var(--rz-line)' }}>
-                {['Apólice / Tomador', 'Modalidade', 'Seguradora', 'Vigência', 'IS', 'Prêmio', 'Status', ''].map((h, i) => (
+                {['Proposta / Tomador', 'Modalidade', 'Seguradora', 'IS', 'Status', 'Prioridade', 'SLA', ''].map((h, i) => (
                   <th key={i} style={{
                     padding: '10px 14px',
-                    textAlign: i >= 4 && i <= 5 ? 'right' : 'left',
+                    textAlign: i === 3 ? 'right' : 'left',
                     fontSize: 10, fontWeight: 600, color: 'var(--rz-text-2)',
                     textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap',
                   }}>
@@ -235,7 +203,7 @@ export function ApolicesTable() {
                   <tr key={i} style={{ borderBottom: '1px solid var(--rz-line-2)' }}>
                     {Array.from({ length: 8 }).map((_, j) => (
                       <td key={j} style={{ padding: '12px 14px' }}>
-                        <div className="rz-skeleton" style={{ height: 12, borderRadius: 4, width: j === 0 ? 140 : j === 4 || j === 5 ? 70 : 90 }} />
+                        <div className="rz-skeleton" style={{ height: 12, borderRadius: 4, width: j === 0 ? 140 : 80 }} />
                       </td>
                     ))}
                   </tr>
@@ -243,17 +211,22 @@ export function ApolicesTable() {
               ) : totalCount === 0 ? (
                 <tr>
                   <td colSpan={8} style={{ padding: '32px 14px', textAlign: 'center', color: 'var(--rz-text-2)', fontSize: 13 }}>
-                    Nenhuma apólice encontrada
+                    Nenhuma proposta encontrada
                   </td>
                 </tr>
               ) : (
-                paged.map((apolice) => {
-                  const days = Math.ceil((new Date(apolice.vigencia_fim).getTime() - Date.now()) / 86400000)
-                  const daysTone = apolice.status === 'vencida' ? 'var(--rz-danger)' : days < 30 ? '#6e4d10' : 'var(--rz-text-2)'
+                paged.map((proposta) => {
+                  const sla = getSLADaysRemaining(proposta.sla_inicio, proposta.sla_dias)
+                  const stageTone = STAGE_TONES[proposta.status] ?? { bg: 'var(--rz-fog)', color: 'var(--rz-text-2)' }
+                  const stageConfig = PROPOSTA_STAGES.find((s) => s.id === proposta.status)
+                  const prioColor = PRIO_COLORS[proposta.prioridade] ?? 'var(--rz-text-3)'
+                  const prioConfig = PRIORIDADES.find((p) => p.id === proposta.prioridade)
+                  const slaColor = sla < 0 ? 'var(--rz-danger)' : sla <= 2 ? 'var(--rz-amber)' : 'var(--rz-text-2)'
+
                   return (
                     <tr
-                      key={apolice.id}
-                      onClick={() => router.push(`/apolices/${apolice.id}`)}
+                      key={proposta.id}
+                      onClick={() => router.push(`/propostas/${proposta.id}`)}
                       style={{
                         borderBottom: '1px solid var(--rz-line-2)',
                         cursor: 'pointer',
@@ -262,15 +235,20 @@ export function ApolicesTable() {
                       onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--rz-fog)')}
                       onMouseLeave={(e) => (e.currentTarget.style.background = '')}
                     >
-                      {/* Apólice + Tomador */}
+                      {/* Proposta + Tomador */}
                       <td style={{ padding: '12px 14px' }}>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontSize: 11, color: 'var(--rz-text-2)', fontFamily: 'var(--font-mono, monospace)' }}>
-                            {apolice.numero_apolice}
+                            {proposta.numero_proposta}
                           </span>
                           <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--rz-ink)' }}>
-                            {(apolice.tomador as any)?.razao_social}
+                            {(proposta.tomador as any)?.razao_social}
                           </span>
+                          {proposta.objeto && (
+                            <span style={{ fontSize: 11, color: 'var(--rz-text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 220 }}>
+                              {proposta.objeto}
+                            </span>
+                          )}
                         </div>
                       </td>
                       {/* Modalidade */}
@@ -279,48 +257,46 @@ export function ApolicesTable() {
                           fontSize: 10, padding: '2px 7px', borderRadius: 999, fontWeight: 500,
                           background: 'var(--rz-lime-soft)', color: 'var(--rz-deep)',
                         }}>
-                          {(apolice.modalidade as any)?.nome}
+                          {(proposta.modalidade as any)?.nome}
                         </span>
                       </td>
                       {/* Seguradora */}
                       <td style={{ padding: '12px 14px', fontSize: 12, color: 'var(--rz-ink)' }}>
-                        {(apolice.seguradora as any)?.nome}
-                      </td>
-                      {/* Vigência */}
-                      <td style={{ padding: '12px 14px' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                          <span style={{ fontSize: 11, color: 'var(--rz-ink)' }}>{formatDateBR(apolice.vigencia_inicio)}</span>
-                          <span style={{ fontSize: 10, color: 'var(--rz-text-3)' }}>
-                            até {formatDateBR(apolice.vigencia_fim)}
-                            {' '}·{' '}
-                            <span style={{ color: daysTone, fontWeight: 600 }}>
-                              {apolice.status === 'vencida' ? `há ${Math.abs(days)}d` : `${days}d`}
-                            </span>
-                          </span>
-                        </div>
+                        {(proposta.seguradora as any)?.nome ?? <span style={{ color: 'var(--rz-text-3)' }}>—</span>}
                       </td>
                       {/* IS */}
                       <td style={{ padding: '12px 14px', textAlign: 'right' }}>
                         <span style={{
-                          color: 'var(--rz-text-2)', fontVariantNumeric: 'tabular-nums',
-                          fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
+                          color: 'var(--rz-ink)', fontVariantNumeric: 'tabular-nums',
+                          fontFamily: 'var(--font-mono, monospace)', fontSize: 12, fontWeight: 600,
                         }}>
-                          {fmtBRLk(apolice.importancia_segurada ?? 0)}
-                        </span>
-                      </td>
-                      {/* Prêmio */}
-                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                        <span style={{
-                          fontWeight: 600, color: 'var(--rz-ink)',
-                          fontVariantNumeric: 'tabular-nums',
-                          fontFamily: 'var(--font-mono, monospace)', fontSize: 12,
-                        }}>
-                          {fmtBRLk(apolice.premio ?? 0)}
+                          {fmtBRLk(proposta.importancia_segurada ?? 0)}
                         </span>
                       </td>
                       {/* Status */}
                       <td style={{ padding: '12px 14px' }}>
-                        <StatusChip status={apolice.status} days={days} />
+                        <span style={{
+                          fontSize: 10, padding: '2px 8px', borderRadius: 999, fontWeight: 600,
+                          background: stageTone.bg, color: stageTone.color,
+                        }}>
+                          {stageConfig?.label}
+                        </span>
+                      </td>
+                      {/* Prioridade */}
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, color: 'var(--rz-ink)' }}>
+                          <span style={{ width: 6, height: 6, borderRadius: 999, background: prioColor, flexShrink: 0 }} />
+                          {prioConfig?.label}
+                        </span>
+                      </td>
+                      {/* SLA */}
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{
+                          fontSize: 12, fontWeight: 600, color: slaColor,
+                          fontVariantNumeric: 'tabular-nums',
+                        }}>
+                          {sla < 0 ? 'Atrasada' : `${sla}d`}
+                        </span>
                       </td>
                       {/* Chevron */}
                       <td style={{ padding: '12px 14px' }}>
@@ -334,14 +310,13 @@ export function ApolicesTable() {
           </table>
         </div>
 
-        {/* Pagination footer */}
         <div style={{
           padding: '10px 16px',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           background: 'var(--rz-fog)', borderTop: '1px solid var(--rz-line)',
         }}>
           <span style={{ fontSize: 11, color: 'var(--rz-text-2)' }}>
-            {totalCount === 0 ? 'Nenhuma apólice' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} de ${totalCount} apólices`}
+            {totalCount === 0 ? 'Nenhuma proposta' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, totalCount)} de ${totalCount} propostas`}
           </span>
           {totalPages > 1 && (
             <div style={{ display: 'flex', gap: 4 }}>

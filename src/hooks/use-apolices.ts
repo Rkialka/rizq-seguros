@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { ApoliceWithRelations } from '@/types/domain'
 import { toast } from 'sonner'
 
+
 const APOLICE_SELECT = `
   *,
   tomador:tomadores(id, razao_social, cnpj),
@@ -65,6 +66,49 @@ export function useApolice(id: string) {
       return data as ApoliceWithRelations
     },
     enabled: !!id,
+  })
+}
+
+export function useApolicesStats() {
+  return useQuery({
+    queryKey: ['apolices-stats'],
+    queryFn: async () => {
+      const supabase = createClient()
+      const { data, error } = await supabase
+        .from('apolices')
+        .select('status, importancia_segurada')
+      if (error) throw error
+      const vigentes = data.filter(a => a.status === 'vigente').length
+      const totalIS = data
+        .filter(a => a.status === 'vigente')
+        .reduce((s, a) => s + (Number(a.importancia_segurada) || 0), 0)
+      return { vigentes, totalIS, total: data.length }
+    },
+    staleTime: 60_000,
+  })
+}
+
+export function useCreateApolice() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Not authenticated')
+      const { data: apolice, error } = await supabase
+        .from('apolices')
+        .insert({ ...data, corretora_id: user.app_metadata?.corretora_id })
+        .select('id, numero_apolice')
+        .single()
+      if (error) throw error
+      return apolice as { id: string; numero_apolice: string }
+    },
+    onSuccess: () => {
+      toast.success('Apólice criada!')
+      queryClient.invalidateQueries({ queryKey: ['apolices'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard-kpis'] })
+    },
+    onError: () => toast.error('Erro ao criar apólice'),
   })
 }
 

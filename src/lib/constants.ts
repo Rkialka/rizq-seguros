@@ -42,6 +42,7 @@ export const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
   { href: '/propostas', label: 'Propostas', icon: 'FileText' },
   { href: '/apolices', label: 'Apólices', icon: 'Shield' },
+  { href: '/configuracoes/documentos', label: 'Ficha de Cadastro', icon: 'FileText' },
 ] as const
 
 export const NAV_ITEMS_PHASE2 = [
@@ -85,4 +86,25 @@ export function getSLAColor(remaining: number): string {
   if (remaining <= 0) return '#ef4444' // red - overdue
   if (remaining <= 2) return '#f59e0b' // yellow - warning
   return '#22c55e' // green - ok
+}
+
+// ─── Shared UI tones ────────────────────────────────────────────────────────
+
+export const STAGE_TONES: Record<string, { bg: string; color: string }> = {
+  cotacao_pendente:   { bg: 'var(--rz-fog)',        color: 'var(--rz-text-2)' },
+  em_analise:         { bg: '#dbeafe',               color: '#1d4ed8' },
+  em_analise_credito: { bg: '#ede9fe',               color: '#6d28d9' },
+  subscricao:         { bg: 'var(--rz-amber-soft)',  color: '#92400e' },
+  em_emissao:         { bg: '#ffedd5',               color: '#c2410c' },
+  aprovada:           { bg: '#dff0e8',               color: 'var(--rz-moss)' },
+  emitida:            { bg: '#dff0e8',               color: 'var(--rz-deep)' },
+  rejeitada:          { bg: 'var(--rz-danger-soft)', color: 'var(--rz-danger)' },
+  erro_emissao:       { bg: 'var(--rz-danger-soft)', color: 'var(--rz-danger)' },
+}
+
+export const PRIO_COLORS: Record<string, string> = {
+  urgente: 'var(--rz-danger)',
+  alta:    'var(--rz-amber)',
+  media:   'var(--rz-deep)',
+  baixa:   'var(--rz-text-3)',
 }
