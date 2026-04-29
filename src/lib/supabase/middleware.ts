@@ -1,14 +1,15 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+const PUBLIC_PATHS = ['/login', '/signup', '/auth', '/api/signup', '/api/onboarding']
+
+function isPublic(pathname: string) {
+  return PUBLIC_PATHS.some((p) => pathname.startsWith(p))
+}
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
   const pathname = request.nextUrl.pathname
-
-  // Keep the public onboarding endpoint reachable for anonymous users.
-  if (pathname === '/api/signup') {
-    return supabaseResponse
-  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,22 +36,34 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !pathname.startsWith('/login') &&
-    !pathname.startsWith('/signup') &&
-    !pathname.startsWith('/auth')
-  ) {
+  // Unauthenticated → login
+  if (!user && !isPublic(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
+  // Authenticated on auth pages → dashboard
+  if (user && (pathname.startsWith('/login') || pathname.startsWith('/signup'))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/dashboard'
+    return NextResponse.redirect(url)
+  }
+
+  // Authenticated but no corretora (e.g. new Google SSO user) → onboarding
   if (
     user &&
-    (pathname.startsWith('/login') ||
-      pathname.startsWith('/signup'))
+    !user.app_metadata?.corretora_id &&
+    !pathname.startsWith('/onboarding') &&
+    !pathname.startsWith('/api/')
   ) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/onboarding'
+    return NextResponse.redirect(url)
+  }
+
+  // Authenticated with corretora on onboarding → dashboard
+  if (user && user.app_metadata?.corretora_id && pathname.startsWith('/onboarding')) {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'
     return NextResponse.redirect(url)
