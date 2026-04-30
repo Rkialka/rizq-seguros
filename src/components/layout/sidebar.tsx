@@ -23,22 +23,23 @@ import {
 } from 'lucide-react'
 import { useCurrentUser, useCurrentCorretora } from '@/hooks/use-perfil'
 import { usePropostasStats } from '@/hooks/use-propostas'
+import { useRenovacoesCount } from '@/hooks/use-renovacoes'
 
 const NAV_ITEMS = [
   { href: '/dashboard',     label: 'Dashboard',     icon: LayoutDashboard, hint: '⌘1' },
   { href: '/propostas',     label: 'Propostas',     icon: FileText,        hint: '⌘2', countKey: 'propostas' },
   { href: '/apolices',      label: 'Apólices',      icon: Shield,          hint: '⌘3' },
   { href: '/tomadores',     label: 'Tomadores',     icon: Building2,       hint: '⌘4' },
-  { href: '/chat',          label: 'Chat IA',       icon: MessageSquare,   hint: '⌘5' },
+  { href: '/renovacoes',    label: 'Renovações',    icon: RefreshCw,       hint: '⌘5', countKey: 'renovacoes' },
+  { href: '/relatorios',   label: 'Relatórios',    icon: BarChart3 },
+  { href: '/chat',          label: 'Chat IA',       icon: MessageSquare },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 const NAV_PHASE2 = [
   { href: '/sinistros',  label: 'Sinistros',   icon: AlertTriangle },
   { href: '/boletos',    label: 'Boletos',      icon: Receipt },
-  { href: '/renovacoes', label: 'Renovações',   icon: RefreshCw, count: 9, pulse: true },
   { href: '/automacoes', label: 'Automações',   icon: Zap },
-  { href: '/relatorios', label: 'Relatórios',   icon: BarChart3 },
 ]
 
 interface SidebarProps {
@@ -67,6 +68,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { data: usuario } = useCurrentUser()
   const { data: corretora } = useCurrentCorretora()
   const { data: propostasStats } = usePropostasStats()
+  const { data: renovacoesCount } = useRenovacoesCount()
   const userName = usuario?.nome ?? 'Usuário'
   const corretoraName = corretora?.razao_social ?? 'Minha Corretora'
   const corretoraDoc = corretora?.susep ? `SUSEP ${corretora.susep}` : (corretora?.cnpj ?? 'Corretora de Seguros')
@@ -185,14 +187,19 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <span style={{ flex: 1 }}>{item.label}</span>
                   {'countKey' in item && item.countKey === 'propostas' && propostasStats?.count != null && (
                     <span style={{
-                      fontSize: 10,
-                      padding: '1px 6px',
-                      borderRadius: 999,
-                      fontWeight: 600,
+                      fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 600,
                       background: isActive ? 'rgba(0,75,54,0.15)' : 'rgba(255,255,255,0.1)',
                       color: isActive ? 'var(--rz-deep)' : 'rgba(255,255,255,0.85)',
                       fontVariantNumeric: 'tabular-nums',
                     }}>{propostasStats.count}</span>
+                  )}
+                  {'countKey' in item && item.countKey === 'renovacoes' && !!renovacoesCount && renovacoesCount > 0 && (
+                    <span style={{
+                      fontSize: 10, padding: '1px 6px', borderRadius: 999, fontWeight: 600,
+                      background: isActive ? 'rgba(0,75,54,0.15)' : 'rgba(239,68,68,0.2)',
+                      color: isActive ? 'var(--rz-deep)' : '#fca5a5',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}>{renovacoesCount}</span>
                   )}
                   {!isActive && 'hint' in item && item.hint && (
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'var(--font-mono, monospace)' }}>
@@ -246,21 +253,9 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       fontSize: 10, padding: '1px 6px', borderRadius: 999,
                       background: 'rgba(255,255,255,0.07)',
                       fontVariantNumeric: 'tabular-nums',
-                    }}>{item.count}</span>
+                    }}>{String(item.count)}</span>
                   )}
                 </>
-              )}
-              {'pulse' in item && item.pulse && (
-                <span style={{
-                  position: 'absolute',
-                  right: collapsed ? 6 : 4,
-                  top: collapsed ? 6 : 6,
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: 'var(--rz-lime)',
-                  boxShadow: '0 0 0 3px rgba(195,214,0,0.2)',
-                }} />
               )}
             </div>
           )

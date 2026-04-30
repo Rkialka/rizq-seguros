@@ -18,9 +18,9 @@ interface Message {
 
 const SUGGESTED_PROMPTS = [
   'Mostre o resumo completo de [nome do cliente]',
-  'Quais apólices vencem nos próximos 30 dias?',
-  'Propostas com SLA vencido',
-  'Histórico de atividades de [cliente]',
+  'Quais propostas estão em cotação pendente?',
+  'Crie uma proposta de Garantia para [cliente]',
+  'Mude o status da proposta [número] para em análise',
 ]
 
 function TypingCursor() {
@@ -290,7 +290,7 @@ export function ChatInterface() {
               letterSpacing: '0.02em',
               border: '1px solid var(--rz-line)',
             }}>
-              claude-sonnet-4-5
+              claude-sonnet-4-6
             </span>
           </div>
         </div>
@@ -510,4 +510,8 @@ const TOOL_LABELS_MAP: Record<string, string> = {
   get_apolices_cliente: '📄 Carregando apólices…',
   get_atividades_cliente: '💬 Carregando histórico de atividades…',
   get_resumo_financeiro: '📊 Calculando resumo financeiro…',
+  listar_propostas: '📋 Listando propostas…',
+  listar_modalidades: '🏷️ Listando modalidades…',
+  atualizar_status_proposta: '✏️ Atualizando status…',
+  criar_proposta: '➕ Criando proposta…',
 }
