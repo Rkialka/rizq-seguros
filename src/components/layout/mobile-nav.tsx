@@ -2,14 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, FileText, Shield, Plus, Settings } from 'lucide-react'
+import { LayoutDashboard, FileText, Shield, Plus, Settings, MessageSquare } from 'lucide-react'
 
 const mobileItems = [
   { href: '/dashboard',     label: 'Dashboard', icon: LayoutDashboard },
   { href: '/propostas',     label: 'Propostas', icon: FileText },
   { href: '/propostas/nova', label: 'Nova',     icon: Plus, isAction: true },
   { href: '/apolices',      label: 'Apólices',  icon: Shield },
-  { href: '/configuracoes', label: 'Config',    icon: Settings },
+  { href: '/chat',          label: 'Chat IA',   icon: MessageSquare },
 ]
 
 export function MobileNav() {

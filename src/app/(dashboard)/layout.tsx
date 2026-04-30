@@ -11,7 +11,7 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, FileText, Shield, Settings, Building2,
-  AlertTriangle, Receipt, FileEdit, RefreshCw, Zap, BarChart3,
+  AlertTriangle, Receipt, FileEdit, RefreshCw, Zap, BarChart3, MessageSquare,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -25,6 +25,7 @@ const MOBILE_NAV = [
   { href: '/propostas',       label: 'Propostas',     icon: FileText },
   { href: '/apolices',        label: 'Apólices',      icon: Shield },
   { href: '/tomadores',       label: 'Tomadores',     icon: Building2 },
+  { href: '/chat',            label: 'Chat IA',       icon: MessageSquare },
   { href: '/configuracoes',   label: 'Configurações', icon: Settings },
 ]
 

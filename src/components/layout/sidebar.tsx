@@ -18,6 +18,7 @@ import {
   ChevronDown,
   MoreHorizontal,
   Settings,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react'
 import { useCurrentUser, useCurrentCorretora } from '@/hooks/use-perfil'
@@ -28,6 +29,7 @@ const NAV_ITEMS = [
   { href: '/propostas',     label: 'Propostas',     icon: FileText,        hint: '⌘2', countKey: 'propostas' },
   { href: '/apolices',      label: 'Apólices',      icon: Shield,          hint: '⌘3' },
   { href: '/tomadores',     label: 'Tomadores',     icon: Building2,       hint: '⌘4' },
+  { href: '/chat',          label: 'Chat IA',       icon: MessageSquare,   hint: '⌘5' },
   { href: '/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
