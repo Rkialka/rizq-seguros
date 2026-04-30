@@ -256,13 +256,23 @@ export function ChatInterface() {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
+        .rz-chat-wrap {
+          display: flex;
+          flex-direction: column;
+          height: calc(100dvh - 60px);
+          max-height: calc(100dvh - 60px);
+          overflow: hidden;
+          background: var(--rz-paper);
+        }
+        @media (max-width: 1023px) {
+          /* 60px topbar + 64px mobile nav */
+          .rz-chat-wrap {
+            height: calc(100dvh - 124px);
+            max-height: calc(100dvh - 124px);
+          }
+        }
       `}</style>
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        background: 'var(--rz-paper)',
-      }}>
+      <div className="rz-chat-wrap">
         {/* Header */}
         <div style={{
           padding: '20px 24px 16px',

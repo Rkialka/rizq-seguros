@@ -16,16 +16,16 @@ export function MobileNav() {
   const pathname = usePathname()
 
   return (
-    <nav style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
-      display: 'flex', alignItems: 'stretch',
-      background: 'var(--rz-white)',
-      borderTop: '1px solid var(--rz-line)',
-      height: 'calc(64px + env(safe-area-inset-bottom))',
-      paddingBottom: 'env(safe-area-inset-bottom)',
-    }}
-    className="lg:hidden"
-    >
+    <>
+      <style>{`@media (min-width: 1024px) { .rz-mobile-nav { display: none !important; } }`}</style>
+      <nav className="rz-mobile-nav" style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50,
+        display: 'flex', alignItems: 'stretch',
+        background: 'var(--rz-white)',
+        borderTop: '1px solid var(--rz-line)',
+        height: 'calc(64px + env(safe-area-inset-bottom))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}>
       {mobileItems.map((item) => {
         const isActive = item.href !== '/propostas/nova' &&
           (pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href)))
@@ -74,5 +74,6 @@ export function MobileNav() {
         )
       })}
     </nav>
+    </>
   )
 }
